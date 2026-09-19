@@ -81,17 +81,49 @@ export async function scrapeLinkedIn(searchTerm, location) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  MONSTER (Foundit) — Live Middleware Job Search API
-//  Endpoint: /middleware/jobsearch?query=...&locations=...
-//  Returns structured JSON with live job listings
+//  MONSTER (Foundit) — Live Job Search API
+//  Uses Render backend /scrape/monster or direct /proxy/monster
 // ════════════════════════════════════════════════════════════
 
-export async function scrapeMonster(searchTerm, location) {
-  try {
-    const query = encodeURIComponent(searchTerm);
-    const loc = encodeURIComponent(location || '');
-    const url = `/proxy/monster/middleware/jobsearch?query=${query}&locations=${loc}&limit=25`;
+const API_BASE = import.meta.env.VITE_NAUKRI_API_URL || '';
 
+export async function scrapeMonster(searchTerm, location) {
+  const query = encodeURIComponent(searchTerm);
+  const loc = encodeURIComponent(location || '');
+
+  // 1. First try Render backend (guaranteed headers, unblocked)
+  if (API_BASE) {
+    try {
+      const response = await fetch(`${API_BASE}/scrape/monster?query=${query}&locations=${loc}&limit=25`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          return result.data.map((job, index) => {
+            const fullText = `${job.title} ${job.company} ${job.location} ${(job.skills || []).join(' ')}`;
+            return {
+              id: generateId('monster', index),
+              title: job.title,
+              company: job.company,
+              location: job.location,
+              platform: 'Monster',
+              url: job.url,
+              description: job.description,
+              salary: job.salary || 'Not disclosed',
+              skills: job.skills && job.skills.length > 0 ? job.skills : extractSkills(fullText),
+              isScraped: true,
+              postedDate: job.postedDate || 'Recently',
+            };
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Backend Monster scrape failed, trying proxy fallback:', err.message);
+    }
+  }
+
+  // 2. Fallback to local /proxy/monster
+  try {
+    const url = `/proxy/monster/middleware/jobsearch?query=${query}&locations=${loc}&limit=25`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Monster fetch failed: ${response.status}`);
 
@@ -100,10 +132,12 @@ export async function scrapeMonster(searchTerm, location) {
     const jobs = [];
 
     rawJobs.forEach((job, index) => {
+      if (!job.title && !job.jdUrl) return;
+
       const title = job.title || `${searchTerm} Position`;
       const company = job.companyName || job.company?.name || 'Company via Monster';
       const locStr = job.locations || location || 'Not specified';
-      const fullText = `${title} ${company} ${locStr} ${job.skills || ''}`;
+      const fullText = `${title} ${company} ${locStr} ${typeof job.skills === 'string' ? job.skills : ''}`;
 
       let jobUrl = 'https://www.foundit.in';
       if (job.jdUrl) {
@@ -115,22 +149,23 @@ export async function scrapeMonster(searchTerm, location) {
       }
 
       let skills = [];
-      if (job.skills) {
+      if (typeof job.skills === 'string') {
         skills = job.skills.split(',').map((s) => s.trim()).filter(Boolean);
+      } else if (Array.isArray(job.skills)) {
+        skills = job.skills;
       }
       if (skills.length === 0) {
         skills = extractSkills(fullText);
       }
 
-      let salary = job.salary;
-      if (!salary && job.minimumSalary?.absoluteValue) {
+      let salary = 'Not disclosed';
+      if (job.salary && job.salary !== '0-0 INR' && job.salary !== '0 INR') {
+        salary = job.salary;
+      } else if (job.minimumSalary?.absoluteValue && job.minimumSalary.absoluteValue > 0) {
         const minSal = job.minimumSalary.absoluteValue.toLocaleString();
         const maxSal = job.maximumSalary?.absoluteValue ? job.maximumSalary.absoluteValue.toLocaleString() : '';
         const curr = job.minimumSalary.currency || 'INR';
         salary = maxSal ? `${minSal} - ${maxSal} ${curr}` : `${minSal} ${curr}`;
-      }
-      if (!salary) {
-        salary = extractSalary(fullText);
       }
 
       const postedDate = job.createdAt || job.lastUpdated || job.postedDate
@@ -145,7 +180,7 @@ export async function scrapeMonster(searchTerm, location) {
         platform: 'Monster',
         url: jobUrl,
         description: job.description || `${title} at ${company}. Location: ${locStr}`,
-        salary: salary || 'Not disclosed',
+        salary,
         skills,
         isScraped: true,
         postedDate,
@@ -161,22 +196,18 @@ export async function scrapeMonster(searchTerm, location) {
 
 // ════════════════════════════════════════════════════════════
 //  NAUKRI — Scraper API
-//  Dev  : Vite plugin at /api/scrape/naukri  (local Puppeteer)
-//  Prod : Render service at VITE_NAUKRI_API_URL/scrape/naukri
-//  Returns structured JSON with live Naukri job postings
+//  Uses Render service at VITE_NAUKRI_API_URL/scrape/naukri
+//  or local Vite plugin at /api/scrape/naukri
 // ════════════════════════════════════════════════════════════
-
-// Render API base URL — set via .env or Netlify env vars
-const NAUKRI_API_BASE = import.meta.env.VITE_NAUKRI_API_URL || '';
 
 export async function scrapeNaukri(searchTerm, location) {
   try {
     const term = encodeURIComponent(searchTerm);
     const loc = encodeURIComponent(location || '');
 
-    // In production use external Render API; in dev use local Vite plugin
-    const url = NAUKRI_API_BASE
-      ? `${NAUKRI_API_BASE}/scrape/naukri?term=${term}&location=${loc}`
+    // In production use external Render API; in dev use local Vite plugin or Render API
+    const url = API_BASE
+      ? `${API_BASE}/scrape/naukri?term=${term}&location=${loc}`
       : `/api/scrape/naukri?term=${term}&location=${loc}`;
 
     const response = await fetch(url);

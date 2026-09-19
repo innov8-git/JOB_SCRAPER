@@ -72,24 +72,25 @@ function naukriScraperPlugin() {
               ? `https://www.naukri.com/${termSlug}-jobs-in-${locSlug}`
               : `https://www.naukri.com/${termSlug}-jobs`;
 
-            await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
+            await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 35000 });
             try {
-              await page.waitForSelector('.srp-jobtuple-wrapper, .cust-job-tuple, [data-job-id]', { timeout: 8000 });
+              await page.waitForSelector('.srp-jobtuple-wrapper, .cust-job-tuple, a[href*="job-listings"]', { timeout: 10000 });
             } catch {
-              // If selector wait times out, continue to extract whatever cards exist
+              // Wait briefly if selector times out
             }
+            await new Promise(r => setTimeout(r, 2000));
 
             const jobs = await page.evaluate(() => {
               const cards = document.querySelectorAll('.srp-jobtuple-wrapper, .cust-job-tuple, [data-job-id]');
               const list = [];
               cards.forEach((card) => {
                 const titleEl = card.querySelector('a.title, [class*="title"] a, a[href*="job-listings"]');
-                const compEl = card.querySelector('a.comp-name, [class*="comp-name"], a[class*="company"]');
-                const locEl = card.querySelector('.locWdth, [class*="locWdth"], [class*="location"], .loc-wrap');
-                const salEl = card.querySelector('.sal-wrap, [class*="sal"], .ni-job-tuple-icon-srp-rupee');
-                const expEl = card.querySelector('.expwdth, [class*="exp"]');
-                const descEl = card.querySelector('.job-desc, [class*="job-desc"], [class*="desc"]');
-                const tagEls = card.querySelectorAll('ul.tags-gt li, [class*="tag"] li, .tag-li');
+                const compEl = card.querySelector('a.comp-name, [class*="comp-name"], a[class*="company"], .comp-name');
+                const locEl = card.querySelector('.locWdth, [class*="locWdth"], [class*="location"], .loc-wrap, .ni-job-tuple-icon-srp-location');
+                const salEl = card.querySelector('.sal-wrap, [class*="sal"], .ni-job-tuple-icon-srp-rupee, .sal');
+                const expEl = card.querySelector('.expwdth, [class*="exp"], .ni-job-tuple-icon-srp-experience');
+                const descEl = card.querySelector('.job-desc, [class*="job-desc"], [class*="desc"], .job-description');
+                const tagEls = card.querySelectorAll('ul.tags-gt li, [class*="tag"] li, .tag-li, .dot-gt li');
                 const skills = Array.from(tagEls).map(t => t.innerText.trim()).filter(Boolean);
 
                 const title = titleEl ? titleEl.innerText.trim() : '';
