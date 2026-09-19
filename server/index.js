@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -29,16 +30,16 @@ async function getBrowser() {
   if (browserInstance && browserInstance.connected) {
     return browserInstance;
   }
+
+  // @sparticuz/chromium provides a lightweight Chromium binary
+  // that works in containerized environments like Render
+  const executablePath = await chromium.executablePath();
+
   browserInstance = await puppeteer.launch({
-    headless: 'new',
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-blink-features=AutomationControlled',
-      '--disable-gpu',
-      '--disable-dev-shm-usage',   // important for Render's low-memory containers
-      '--window-size=1280,800',
-    ],
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath,
+    headless: chromium.headless,
   });
   return browserInstance;
 }
