@@ -1,0 +1,23 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Proxy rewrites for external job sources in production
+[[redirects]]
+  from = "/proxy/linkedin/*"
+  to = "https://www.linkedin.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/proxy/monster/*"
+  to = "https://www.foundit.in/:splat"
+  status = 200
+  force = true
+
+# Single Page Application (SPA) routing fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
