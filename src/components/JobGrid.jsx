@@ -1,7 +1,8 @@
 import React from 'react';
 import JobCard from './JobCard';
+import { matchesExperienceFilter } from '../utils/experienceParser';
 
-export default function JobGrid({ jobs, loading }) {
+export default function JobGrid({ jobs, loading, experienceFilter }) {
   if (loading) {
     return (
       <div className="loading-container">
@@ -44,10 +45,64 @@ export default function JobGrid({ jobs, loading }) {
     );
   }
 
+  // When an experience filter is active, separate known vs unknown experience
+  const isFiltering = experienceFilter && experienceFilter !== 'all';
+
+  if (isFiltering) {
+    const knownJobs = [];
+    const unknownJobs = [];
+
+    jobs.forEach((job) => {
+      const { unknown } = matchesExperienceFilter(job, experienceFilter);
+      if (unknown) {
+        unknownJobs.push(job);
+      } else {
+        knownJobs.push(job);
+      }
+    });
+
+    return (
+      <div className="job-grid-sections">
+        {knownJobs.length > 0 && (
+          <div className="job-grid">
+            {knownJobs.map((job) => (
+              <JobCard key={job.id} job={job} showUnknownBadge={false} />
+            ))}
+          </div>
+        )}
+
+        {unknownJobs.length > 0 && (
+          <>
+            <div className="experience-unknown-divider">
+              <span className="divider-line"></span>
+              <span className="divider-label">🧑‍💻 Experience Unknown ({unknownJobs.length})</span>
+              <span className="divider-line"></span>
+            </div>
+            <div className="job-grid">
+              {unknownJobs.map((job) => (
+                <JobCard key={job.id} job={job} showUnknownBadge={true} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {knownJobs.length === 0 && unknownJobs.length === 0 && (
+          <div className="empty-state">
+            <div className="empty-icon">🔎</div>
+            <h3 className="empty-title">No matching jobs</h3>
+            <p className="empty-text">
+              No jobs match the selected experience filter. Try a different range.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="job-grid">
       {jobs.map((job) => (
-        <JobCard key={job.id} job={job} />
+        <JobCard key={job.id} job={job} showUnknownBadge={false} />
       ))}
     </div>
   );

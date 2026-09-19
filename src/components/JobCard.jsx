@@ -1,7 +1,8 @@
 import React from 'react';
 import { getPlatformColor, getPlatformGradient, handleJobClick } from '../utils/helpers';
+import { parseExperience } from '../utils/experienceParser';
 
-export default function JobCard({ job }) {
+export default function JobCard({ job, showUnknownBadge }) {
   const platformColor = getPlatformColor(job.platform);
   const platformGradient = getPlatformGradient(job.platform);
 
@@ -10,6 +11,8 @@ export default function JobCard({ job }) {
       ? job.description.slice(0, 120) + '...'
       : job.description
     : 'No description available';
+
+  const hasExperience = job.experience && parseExperience(job.experience);
 
   return (
     <article
@@ -43,6 +46,20 @@ export default function JobCard({ job }) {
           <span className="location-icon">📍</span>
           {job.location}
         </div>
+
+        {hasExperience && (
+          <div className="card-experience">
+            <span className="experience-icon">🧑‍💻</span>
+            {job.experience}
+          </div>
+        )}
+
+        {showUnknownBadge && !hasExperience && (
+          <div className="card-experience experience-unknown">
+            <span className="experience-icon">🧑‍💻</span>
+            Experience Unknown
+          </div>
+        )}
 
         {job.skills && job.skills.length > 0 && (
           <div className="card-skills">

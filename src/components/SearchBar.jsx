@@ -1,6 +1,7 @@
 import React from 'react';
+import { EXPERIENCE_OPTIONS } from '../utils/experienceParser';
 
-export default function SearchBar({ searchTerm, setSearchTerm, location, setLocation, onSearch, loading }) {
+export default function SearchBar({ searchTerm, setSearchTerm, location, setLocation, experience, setExperience, onSearch, loading }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSearch();
@@ -32,6 +33,22 @@ export default function SearchBar({ searchTerm, setSearchTerm, location, setLoca
             onChange={(e) => setLocation(e.target.value)}
             disabled={loading}
           />
+        </div>
+        <div className="input-group">
+          <label htmlFor="search-experience" className="input-label">🧑‍💻 Experience</label>
+          <select
+            id="search-experience"
+            className="search-input experience-select"
+            value={experience}
+            onChange={(e) => setExperience(e.target.value)}
+            disabled={loading}
+          >
+            {EXPERIENCE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
       <button

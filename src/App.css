@@ -240,7 +240,7 @@ body::before {
 
 .search-inputs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 1rem;
 }
 
@@ -277,6 +277,29 @@ body::before {
 .search-input:focus {
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* ── Experience Select ── */
+.experience-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238888a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 14px;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.experience-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 0.5rem;
+}
+
+.experience-select:hover:not(:disabled) {
+  border-color: var(--border-hover);
 }
 
 .search-input:disabled {
@@ -594,6 +617,36 @@ body::before {
   animation: fadeIn 0.5s ease;
 }
 
+.job-grid-sections {
+  animation: fadeIn 0.5s ease;
+}
+
+/* ── Experience Unknown Divider ── */
+.experience-unknown-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem 0 1.25rem;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-default), transparent);
+}
+
+.divider-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  padding: 0.35rem 0.85rem;
+  background: var(--bg-card);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-sm);
+}
+
 /* ============================================================
    JOB CARD
    ============================================================ */
@@ -725,6 +778,31 @@ body::before {
 }
 
 .location-icon {
+  font-size: 0.8rem;
+}
+
+.card-experience {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  background: var(--accent-glow);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  width: fit-content;
+}
+
+.card-experience.experience-unknown {
+  color: var(--text-muted);
+  background: transparent;
+  border-color: var(--border-default);
+  border-style: dashed;
+}
+
+.experience-icon {
   font-size: 0.8rem;
 }
 

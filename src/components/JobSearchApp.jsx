@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Header from './Header';
 import SearchBar from './SearchBar';
 import StatsDisplay from './StatsDisplay';
@@ -6,13 +6,25 @@ import JobGrid from './JobGrid';
 import Footer from './Footer';
 import { sanitize } from '../utils/sanitize';
 import { scrapeLinkedIn, scrapeNaukri, scrapeMonster } from '../utils/scrapers';
+import { matchesExperienceFilter } from '../utils/experienceParser';
 
 export default function JobSearchApp() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('React Developer');
   const [location, setLocation] = useState('Pune');
+  const [experience, setExperience] = useState('all');
   const [error, setError] = useState(null);
+
+  // Apply experience filter on the client side (instant, no re-scrape)
+  const filteredJobs = useMemo(() => {
+    if (experience === 'all') return jobs;
+
+    return jobs.filter((job) => {
+      const { matches } = matchesExperienceFilter(job, experience);
+      return matches;
+    });
+  }, [jobs, experience]);
 
   const scrapeJobs = async () => {
     // Sanitize inputs
@@ -87,6 +99,8 @@ export default function JobSearchApp() {
           setSearchTerm={setSearchTerm}
           location={location}
           setLocation={setLocation}
+          experience={experience}
+          setExperience={setExperience}
           onSearch={scrapeJobs}
           loading={loading}
         />
@@ -98,9 +112,9 @@ export default function JobSearchApp() {
           </div>
         )}
 
-        <StatsDisplay jobs={jobs} />
+        <StatsDisplay jobs={filteredJobs} />
 
-        <JobGrid jobs={jobs} loading={loading} />
+        <JobGrid jobs={filteredJobs} loading={loading} experienceFilter={experience} />
       </main>
 
       <Footer />
